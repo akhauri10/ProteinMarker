@@ -18,40 +18,44 @@ namespace Service
         //5. Compute the result based on specified rules
 
         const int MAX_PERMUTATIONS = 10;
+        const int CHUNK_SIZE = 60;
         static int counter;
-
+        List<string> peptidePermList = new List<string>();
+        
         public void ProcessProtein(string proteinString, int noOfDivisions)
         {
-            ReadWriteFile();
-            //var splitArray = InputData(proteinString, noOfDivisions);
-            //CreatePermutations(splitArray,0, splitArray.Length - 1);
-        }
+            var splitArray = InputData(proteinString, noOfDivisions);
+            CreatePermutations(splitArray, 0, splitArray.Length - 1, noOfDivisions);
+            CreateInputFiles();
+            //ReadWriteFile();
+        }       
 
         public string[] InputData(string proteinString, int noOfDivisons)
         {
             int stringLength = proteinString.Length;
-            string[] proteinArray = new string[stringLength / noOfDivisons + 1];
-            for (int i = 0; i <= stringLength / noOfDivisons; i++)
+            string[] proteinArray = new string[stringLength / noOfDivisons];
+            for (int i = 0; i < stringLength / noOfDivisons; i++)
             {
-                proteinArray[i] = proteinString.Substring(i, noOfDivisons);
+                proteinArray[i] = proteinString.Substring(i*noOfDivisons, noOfDivisons);
             }
             return proteinArray;
-        }
+        }        
 
-        private void CreatePermutations(string[] list, int startingPos, int endPos)
+        private void CreatePermutations(string[] list, int startingPos, int endPos, int chunkSize)
         {
             if(counter >= MAX_PERMUTATIONS) { return; }
             if (startingPos == endPos)
             {
-                list.ToList<string>().ForEach(i => Console.Write("{0}\t", i));
-                Console.WriteLine();
+                //list.ToList<string>().ForEach(i => Console.Write("{0}\t", i));
+                //Console.WriteLine();
+                peptidePermList.Add(string.Join("", list));
                 counter++;                
             }
             else
                 for (int i = startingPos; i <= endPos; i++)
                 {
                     Swap(ref list[startingPos], ref list[i]);
-                    CreatePermutations(list, startingPos + 1, endPos);
+                    CreatePermutations(list, startingPos + 1, endPos, chunkSize);
                     Swap(ref list[startingPos], ref list[i]);
                 }
         }
@@ -63,6 +67,21 @@ namespace Service
             var temp = a;
             a = b;
             b = temp;
+        }
+
+        private void CreateInputFiles()
+        {
+            int counter = 0;
+            foreach (string protienCombi in peptidePermList)
+            {
+                WriteFastaFile(protienCombi, counter++);
+            }
+        }
+        private void WriteFastaFile(string protienCombi, int fileNumber)
+        {
+            var peptideSequence = Enumerable.Range(0, protienCombi.Length / CHUNK_SIZE).Select(i => protienCombi.Substring(i * CHUNK_SIZE, CHUNK_SIZE)).ToList();
+            File.WriteAllText(fileNumber.ToString() + ".txt", ">EMBOSS_001" + Environment.NewLine);            
+            File.AppendAllLines(fileNumber.ToString() + ".txt", peptideSequence);
         }
 
         private void ReadWriteFile()
