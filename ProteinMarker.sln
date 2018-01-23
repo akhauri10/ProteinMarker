@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProteinMarkerConsole", "Pro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Service\Service.csproj", "{E4880662-BBFD-49DC-B272-43981B95C07E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtienMarkerGUI", "ProtienMarkerGUI\ProtienMarkerGUI.csproj", "{8745ECB2-1F3A-471C-9BDE-12E19BFD7137}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{FD69D7E0-5735-4EEF-B9DF-249632B7589C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{E4880662-BBFD-49DC-B272-43981B95C07E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4880662-BBFD-49DC-B272-43981B95C07E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4880662-BBFD-49DC-B272-43981B95C07E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8745ECB2-1F3A-471C-9BDE-12E19BFD7137}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8745ECB2-1F3A-471C-9BDE-12E19BFD7137}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8745ECB2-1F3A-471C-9BDE-12E19BFD7137}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8745ECB2-1F3A-471C-9BDE-12E19BFD7137}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD69D7E0-5735-4EEF-B9DF-249632B7589C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD69D7E0-5735-4EEF-B9DF-249632B7589C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD69D7E0-5735-4EEF-B9DF-249632B7589C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD69D7E0-5735-4EEF-B9DF-249632B7589C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using HtmlAgilityPack;
 
 namespace Service
 {
@@ -19,15 +21,19 @@ namespace Service
 
         const int MAX_PERMUTATIONS = 10;
         const int CHUNK_SIZE = 60;
-        static int counter;
-        List<string> peptidePermList = new List<string>();
-        
+        static int _counter;
+        List<string> _peptidePermList = new List<string>();
+        string _inputDirectoryPath = "..\\..\\InputFile";
+        string _outputDirectoryPath = "..\\..\\OutputFile";
+        XmlNode resultNode;
+        public object HttpDocument { get; private set; }
+
         public void ProcessProtein(string proteinString, int noOfDivisions)
         {
-            var splitArray = InputData(proteinString, noOfDivisions);
-            CreatePermutations(splitArray, 0, splitArray.Length - 1, noOfDivisions);
-            CreateInputFiles();
-            //ReadWriteFile();
+            //var splitArray = InputData(proteinString, noOfDivisions);
+            //CreatePermutations(splitArray, 0, splitArray.Length - 1, noOfDivisions);
+            //CreateInputFiles();
+            ReadWriteFile();
         }       
 
         public string[] InputData(string proteinString, int noOfDivisons)
@@ -43,13 +49,13 @@ namespace Service
 
         private void CreatePermutations(string[] list, int startingPos, int endPos, int chunkSize)
         {
-            if(counter >= MAX_PERMUTATIONS) { return; }
+            if(_counter >= MAX_PERMUTATIONS) { return; }
             if (startingPos == endPos)
             {
                 //list.ToList<string>().ForEach(i => Console.Write("{0}\t", i));
                 //Console.WriteLine();
-                peptidePermList.Add(string.Join("", list));
-                counter++;                
+                _peptidePermList.Add(string.Join("", list));
+                _counter++;                
             }
             else
                 for (int i = startingPos; i <= endPos; i++)
@@ -72,36 +78,78 @@ namespace Service
         private void CreateInputFiles()
         {
             int counter = 0;
-            foreach (string protienCombi in peptidePermList)
+            
+            if (!Directory.Exists(_inputDirectoryPath)) { Directory.CreateDirectory(_inputDirectoryPath); }            
+            foreach (string protienCombi in _peptidePermList)
             {
-                WriteFastaFile(protienCombi, counter++);
+                WriteFastaFile(protienCombi, counter++, _inputDirectoryPath);
             }
         }
-        private void WriteFastaFile(string protienCombi, int fileNumber)
+        private void WriteFastaFile(string protienCombi, int fileNumber, string directoryPath)
         {
             var peptideSequence = Enumerable.Range(0, protienCombi.Length / CHUNK_SIZE).Select(i => protienCombi.Substring(i * CHUNK_SIZE, CHUNK_SIZE)).ToList();
-            File.WriteAllText(fileNumber.ToString() + ".txt", ">EMBOSS_001" + Environment.NewLine);            
-            File.AppendAllLines(fileNumber.ToString() + ".txt", peptideSequence);
+            File.WriteAllText(directoryPath + "\\" + fileNumber.ToString() + ".txt", ">EMBOSS_001" + Environment.NewLine);            
+            File.AppendAllLines(directoryPath + "\\" + fileNumber.ToString() + ".txt", peptideSequence);
         }
 
         private void ReadWriteFile()
         {
-            Upload();
-            //var memStream = new MemoryStream();
-            //using (FileStream fileStream = new FileStream("C:\\Users\\Shaurya\\Desktop\\yash test.txt", FileMode.Open, FileAccess.Read))
-            //{                
-            //    fileStream.CopyTo(memStream);
-            //}
-            //var actionUrl = "http://peptibase.cs.biu.ac.il/PepCleave_cd4/runCleavageScore.php";
-            //var resultStream = Upload(actionUrl, memStream);
-            //FileStream outputFile = new FileStream("Result.txt", FileMode.OpenOrCreate, FileAccess.Write);
-            //resultStream.CopyTo(outputFile);
-            //outputFile.Close();
-            //resultStream.Close();
-            //memStream.Close();
+
+            foreach (string filePath in Directory.EnumerateFiles(_inputDirectoryPath))
+            {
+                string fileName = (filePath.Substring(filePath.LastIndexOf("\\") + 1)).Split('.')[0] + ".html";
+                string replyfromWebsite = Upload(filePath);
+                //if (!Directory.Exists(_outputDirectoryPath)) { Directory.CreateDirectory(_outputDirectoryPath); }
+                //File.WriteAllText(string.Format("{0}\\{1}", _outputDirectoryPath, fileName), replyfromWebsite);
+                ExtractScoreFromResult(replyfromWebsite, fileName);
+            }
+            Console.WriteLine("All files written to output directory");            
         }
 
-        private void Upload()
+        private void ExtractScoreFromResult(string htmlDoc, string fileName)
+        {
+            string extractedValue;
+            var doc = new HtmlDocument();
+            //doc.Load(_outputDirectoryPath + "\\" + fileName);
+            doc.LoadHtml(htmlDoc);
+            var nodes = doc.DocumentNode.Descendants("INPUT");
+            foreach(HtmlNode node in nodes)
+            {
+                if(node.Attributes.Contains("NAME") && node.Attributes["NAME"].Value == "isToSave")
+                {
+                    extractedValue = node.Attributes["VALUE"].Value;
+                    break;
+                }
+            }
+            //var stream = new MemoryStream(Encoding.UTF8.GetBytes(replyforWebsite ?? "")); //encode the html string so that it can get loaded in memory stream
+
+            //GetResultElement(doc);
+        }
+
+        private void GetResultElement(XmlNode node)
+        {
+            if (node.InnerText == "Output:")
+            {
+                resultNode = node.NextSibling.NextSibling;
+                return;
+            }
+            else
+            {
+                if (node.ChildNodes != null)
+                {
+                    foreach (XmlNode innerNode in node.ChildNodes)
+                    {
+                        GetResultElement(innerNode);
+                    }
+                }
+                else
+                {
+                    GetResultElement(node.NextSibling);
+                }
+            }
+        }
+
+        private string Upload(string fileUrl)
         {
             // Create a http request to the server endpoint that will pick up the
             // file and file description.
@@ -109,7 +157,7 @@ namespace Service
             (HttpWebRequest)WebRequest.Create("http://peptibase.cs.biu.ac.il/PepCleave_cd4/runCleavageScore.php");
 
             string boundaryString = "---------------------------7e1186332068c";
-            string fileUrl = @"C: \Users\Shaurya\Desktop\yash test.txt";
+            //string fileUrl = @"C: \Users\Shaurya\Desktop\yash test.txt";
 
             // Set the http request header \\
             requestToServerEndpoint.Method = WebRequestMethods.Http.Post;
@@ -184,8 +232,8 @@ namespace Service
             WebResponse response = requestToServerEndpoint.GetResponse();
             StreamReader responseReader = new StreamReader(response.GetResponseStream());
             string replyFromServer = responseReader.ReadToEnd();
-            File.WriteAllText("Results.html", replyFromServer);
+            return replyFromServer;           
         }
         
-    }
+    }   
 }
